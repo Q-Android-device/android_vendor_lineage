@@ -137,7 +137,6 @@ PRODUCT_PACKAGES += \
 
 # Optional packages
 PRODUCT_PACKAGES += \
-    LiveWallpapersPicker \
     PhotoTable \
     Terminal
 
