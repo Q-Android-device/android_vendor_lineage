@@ -129,12 +129,10 @@ PRODUCT_PACKAGES += \
 # Required Lineage packages
 PRODUCT_PACKAGES += \
     LineageParts \
-    Development \
     Profiles
 
 # Optional packages
 PRODUCT_PACKAGES += \
-    PhotoTable \
     Terminal
 
 # Custom Lineage packages
