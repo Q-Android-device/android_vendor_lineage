@@ -139,6 +139,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     ExactCalculator \
     Exchange2 \
+    LiveWallpapersPicker \
+    PhotoTable \
     Terminal
 
 # Lineage packages
