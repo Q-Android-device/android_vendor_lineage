@@ -1,4 +1,4 @@
-#!/bin/bash
+/#!/bin/bash
 #
 # Copyright (C) 2016 The CyanogenMod Project
 # Copyright (C) 2017-2019 The LineageOS Project
@@ -291,6 +291,23 @@ function write_product_copy_files() {
             local OUTTARGET=$(truncate_file $TARGET)
             printf '    %s/proprietary/%s:$(TARGET_COPY_OUT_SYSTEM)/%s%s\n' \
                 "$OUTDIR" "$TARGET" "$OUTTARGET" "$LINEEND" >> "$PRODUCTMK"
+        if [ "$TREBLE_COMPAT" == "true" ] || [ "$TREBLE_COMPAT" == "1" ]; then
+            if prefix_match_file "vendor/" $TARGET ; then
+                local OUTTARGET=$(truncate_file $TARGET)
+                printf '    %s/proprietary/%s:$(TARGET_COPY_OUT_VENDOR)/%s%s\n' \
+                    "$OUTDIR" "$TARGET" "$OUTTARGET" "$LINEEND" >> "$PRODUCTMK"
+            elif prefix_match_file "product/" $TARGET ; then
+                local OUTTARGET=$(truncate_file $TARGET)
+                printf '    %s/proprietary/%s:$(TARGET_COPY_OUT_PRODUCT)/%s%s\n' \
+                    "$OUTDIR" "$TARGET" "$OUTTARGET" "$LINEEND" >> "$PRODUCTMK"
+            elif prefix_match_file "odm/" $TARGET ; then
+                local OUTTARGET=$(truncate_file $TARGET)
+                printf '    %s/proprietary/%s:$(TARGET_COPY_OUT_ODM)/%s%s\n' \
+                    "$OUTDIR" "$TARGET" "$OUTTARGET" "$LINEEND" >> "$PRODUCTMK"
+            else
+                printf '    %s/proprietary/%s:system/%s%s\n' \
+                    "$OUTDIR" "$TARGET" "$TARGET" "$LINEEND" >> "$PRODUCTMK"
+            fi
         else
             printf '    %s/proprietary/%s:$(TARGET_COPY_OUT_SYSTEM)/%s%s\n' \
                 "$OUTDIR" "$TARGET" "$TARGET" "$LINEEND" >> "$PRODUCTMK"
@@ -303,7 +320,7 @@ function write_product_copy_files() {
 # write_blueprint_packages:
 #
 # $1: The LOCAL_MODULE_CLASS for the given module list
-# $2: /system, /odm, /product, or /vendor partition
+# $2: /odm, /product, or /vendor partition
 # $3: type-specific extra flags
 # $4: Name of the array holding the target list
 #
@@ -504,6 +521,7 @@ function write_makefile_packages() {
             SRC+="/product"
         elif [ "$PARTITION" = "odm" ]; then
             SRC+="/odm"
+
         fi
 
         printf 'include $(CLEAR_VARS)\n'
@@ -691,6 +709,22 @@ function write_product_packages() {
         write_blueprint_packages "SHARED_LIBRARIES" "odm" "64" "O_LIB64" >> "$ANDROIDBP"
     fi
 
+    local T_O_LIB32=( $(prefix_match "odm/lib/") )
+    local T_O_LIB64=( $(prefix_match "odm/lib64/") )
+    local O_MULTILIBS=( $(comm -12 <(printf '%s\n' "${T_O_LIB32[@]}") <(printf '%s\n' "${T_O_LIB64[@]}")) )
+    local O_LIB32=( $(comm -23 <(printf '%s\n' "${T_O_LIB32[@]}") <(printf '%s\n' "${O_MULTILIBS[@]}")) )
+    local O_LIB64=( $(comm -23 <(printf '%s\n' "${T_O_LIB64[@]}") <(printf '%s\n' "${O_MULTILIBS[@]}")) )
+
+    if [ "${#O_MULTILIBS[@]}" -gt "0" ]; then
+        write_packages "SHARED_LIBRARIES" "odm" "both" "O_MULTILIBS" >> "$ANDROIDMK"
+    fi
+    if [ "${#O_LIB32[@]}" -gt "0" ]; then
+        write_packages "SHARED_LIBRARIES" "odm" "32" "O_LIB32" >> "$ANDROIDMK"
+    fi
+    if [ "${#O_LIB64[@]}" -gt "0" ]; then
+        write_packages "SHARED_LIBRARIES" "odm" "64" "O_LIB64" >> "$ANDROIDMK"
+    fi
+
     # Apps
     local APPS=( $(prefix_match "app/") )
     if [ "${#APPS[@]}" -gt "0" ]; then
@@ -732,6 +766,14 @@ function write_product_packages() {
     if [ "${#O_PRIV_APPS[@]}" -gt "0" ]; then
         write_blueprint_packages "APPS" "odm" "priv-app" "O_PRIV_APPS" >> "$ANDROIDBP"
     fi
+    local O_APPS=( $(prefix_match "odm/app/") )
+    if [ "${#O_APPS[@]}" -gt "0" ]; then
+        write_packages "APPS" "odm" "" "O_APPS" >> "$ANDROIDMK"
+    fi
+    local O_PRIV_APPS=( $(prefix_match "odm/priv-app/") )
+    if [ "${#O_PRIV_APPS[@]}" -gt "0" ]; then
+        write_packages "APPS" "odm" "priv-app" "O_PRIV_APPS" >> "$ANDROIDMK"
+    fi
 
     # Framework
     local FRAMEWORK=( $(prefix_match "framework/") )
@@ -753,6 +795,10 @@ function write_product_packages() {
     local O_FRAMEWORK=( $(prefix_match "odm/framework/") )
     if [ "${#O_FRAMEWORK[@]}" -gt "0" ]; then
         write_blueprint_packages "JAVA_LIBRARIES" "odm" "" "O_FRAMEWORK" >> "$ANDROIDBP"
+    fi
+    local O_FRAMEWORK=( $(prefix_match "odm/framework/") )
+    if [ "${#O_FRAMEWORK[@]}" -gt "0" ]; then
+        write_packages "JAVA_LIBRARIES" "odm" "" "O_FRAMEWORK" >> "$ANDROIDMK"
     fi
 
     # Etc
@@ -776,6 +822,10 @@ function write_product_packages() {
     if [ "${#O_ETC[@]}" -gt "0" ]; then
         write_blueprint_packages "ETC" "odm" "" "O_ETC" >> "$ANDROIDBP"
     fi
+    local O_ETC=( $(prefix_match "odm/etc/") )
+    if [ "${#O_ETC[@]}" -gt "0" ]; then
+        write_packages "ETC" "odm" "" "O_ETC" >> "$ANDROIDMK"
+    fi
 
     # Executables
     local BIN=( $(prefix_match "bin/") )
@@ -797,6 +847,10 @@ function write_product_packages() {
     local O_BIN=( $(prefix_match "odm/bin/") )
     if [ "${#O_BIN[@]}" -gt "0" ]; then
         write_blueprint_packages "EXECUTABLES" "odm" "" "O_BIN" >> "$ANDROIDBP"
+    fi
+    local O_BIN=( $(prefix_match "odm/bin/") )
+    if [ "${#O_BIN[@]}" -gt "0" ]; then
+        write_packages "EXECUTABLES" "odm" "" "O_BIN" >> "$ANDROIDMK"
     fi
     local SBIN=( $(prefix_match "sbin/") )
     if [ "${#SBIN[@]}" -gt "0" ]; then
@@ -1095,8 +1149,8 @@ function oat2dex() {
     local HOST="$(uname,,)"
 
     if [ -z "$BAKSMALIJAR" ] || [ -z "$SMALIJAR" ]; then
-        export BAKSMALIJAR="$LINEAGE_ROOT"/prebuilts/tools-lineage/all/smali/baksmali.jar
-        export SMALIJAR="$LINEAGE_ROOT"/prebuilts/tools-lineage/all/smali/smali.jar
+        export BAKSMALIJAR="$LINEAGE_ROOT"/prebuilts/tools-lineage/common/smali/baksmali.jar
+        export SMALIJAR="$LINEAGE_ROOT"/prebuilts/tools-lineage/common/smali/smali.jar
     fi
 
     if [ -z "$VDEXEXTRACTOR" ]; then

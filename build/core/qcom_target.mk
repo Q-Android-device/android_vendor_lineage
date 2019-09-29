@@ -26,6 +26,9 @@ $(call set-device-specific-path,DATA_IPA_CFG_MGR,data-ipa-cfg-mgr,vendor/qcom/op
 $(call set-device-specific-path,GPS,gps,hardware/qcom-caf/gps)
 $(call set-device-specific-path,SENSORS,sensors,hardware/qcom-caf/sensors)
 $(call set-device-specific-path,LOC_API,loc-api,vendor/qcom/opensource/location)
+
+$(call set-device-specific-path,BT_VENDOR,bt-vendor,hardware/qcom-caf/bt)
+$(call set-device-specific-path,DATA_IPA_CFG_MGR,data-ipa-cfg-mgr,vendor/qcom/opensource/data-ipa-cfg-mgr)
 $(call set-device-specific-path,DATASERVICES,dataservices,vendor/qcom/opensource/dataservices)
 $(call set-device-specific-path,POWER,power,hardware/qcom-caf/power)
 $(call set-device-specific-path,THERMAL,thermal,hardware/qcom-caf/thermal)
@@ -51,5 +54,9 @@ $(call project-set-path,qcom-dataservices,$(TARGET_DEVICE_DIR)/dataservices)
 
 $(call wlan-set-path-variant,qcom)
 $(call bt-vendor-set-path-variant,qcom)
+$(call set-device-specific-path,WLAN,wlan,hardware/qcom-caf/wlan)
+
+PRODUCT_CFI_INCLUDE_PATHS += \
+    hardware/qcom-caf/wlan/qcwcn/wpa_supplicant_8_lib
 
 endif
